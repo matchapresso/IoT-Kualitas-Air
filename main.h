@@ -3,81 +3,94 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <DFRobot_PH.h>
+#include <GravityTDS.h>
+#include <GravityDO.h>
 
-// OLED Configuration
+// konfigurasi pin
+#define ONE_WIRE_BUS 5  // DS18B20 data pin
+#define PH_SENSOR_PIN A0
+#define TURBIDITY_SENSOR_PIN A1
+#define DO_SENSOR_PIN A2
+
+// konfigurasi OLED display
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define OLED_RESET -1
+#define OLED_RESET    -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// OneWire Configuration for DS18B20
-#define ONE_WIRE_BUS 5
+// pengaturan sensor suhu DS18B20
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
-// pH Sensor Configuration
-#define PH_SENSOR_PIN A0
+// Pengaturan sensor pH
 DFRobot_PH ph;
 
-// Dissolved Oxygen Sensor Configuration
-#define DO_SENSOR_TX 4
-#define DO_SENSOR_RX 3
-SoftwareSerial mySerial(DO_SENSOR_RX, DO_SENSOR_TX);
+// Pengaturan sensor Turbidity
+int turbidityValue = 0;
+
+// Pengaturan sensor Dissolved Oxygen
+GravityTDS gravityTds;
+GravityDO gravityDO;
 
 void setup() {
   Serial.begin(115200);
-  mySerial.begin(9600);
 
-  // OLED Setup
+  // Inisialisasi OLED display
   if(!display.begin(SSD1306_I2C_ADDRESS, OLED_RESET)) {
     Serial.println(F("SSD1306 allocation failed"));
     for(;;);
   }
-  display.display();
   delay(2000);
-  display.clearDisplay();
-  
-  // DS18B20 Setup
-  sensors.begin();
 
-  // pH Sensor Setup
+  // Inisialisasi sensor
+  sensors.begin();
   ph.begin();
-  
-  // Dissolved Oxygen Sensor Setup
-  mySerial.print("O,cal\r\n");
+  gravityTds.begin();
+  gravityDO.begin();
+
+  display.clearDisplay();
+  display.display();
 }
 
 void loop() {
-  // Read DS18B20 temperature
+  // membaca suhu air dari DS18B20
   sensors.requestTemperatures();
   float temperature = sensors.getTempCByIndex(0);
 
-  // Read pH value
-  float phValue = ph.readPH();
+  // membaca pH
+  float pHValue = ph.readPH();
 
-  // Read Dissolved Oxygen
-  mySerial.print("O,r\r\n");
-  delay(1000);
-  String doData = mySerial.readStringUntil('\r');
-  float dissolvedOxygen = doData.toFloat();
+  // membaca turbidity
+  int turbidityValue = analogRead(TURBIDITY_SENSOR_PIN);
 
-  // Display readings on OLED
+  // membaca dissolved oxygen and salinity
+  float dissolvedOxygen = gravityDO.readDO();
+  float salinity = gravityDO.readSalinity();
+
+  // menampilkan hasil monitoring pada layar OLED
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.print("Temperature: ");
+  display.setCursor(0,0);
+  display.print(F("Temp: "));
   display.print(temperature);
-  display.println(" C");
+  display.println(F(" C"));
 
-  display.print("pH: ");
-  display.println(phValue);
+  display.print(F("pH: "));
+  display.println(pHValue);
 
-  display.print("DO: ");
+  display.print(F("Turbidity: "));
+  display.println(turbidityValue);
+
+  display.print(F("DO: "));
   display.print(dissolvedOxygen);
-  display.println(" mg/L");
+  display.println(F(" mg/L"));
+
+  display.print(F("Salinity: "));
+  display.print(salinity);
+  display.println(F(" ppt"));
 
   display.display();
 
-  delay(5000); // Adjust the delay according to your needs
+  delay(5000); // Update setiap 5000 milisekon (5 detik, opsional dan dapat diubah)
 }
