@@ -8,8 +8,8 @@
 
 // konfigurasi pin
 #define ONE_WIRE_BUS 5  // DS18B20 data pin
-#define PH_SENSOR_PIN A0
-#define TURBIDITY_SENSOR_PIN A1
+#define PH_SENSOR_PIN A0 //pH sensor di pin A0
+#define TURBIDITY_SENSOR_PIN A1 
 #define DO_SENSOR_PIN A2
 
 // konfigurasi OLED display
