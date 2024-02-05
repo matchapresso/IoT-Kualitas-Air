@@ -9,3 +9,6 @@ DFRobot_PH: Install "DFRobot_PH" by DFRobot.<br />
 GravityTDS: Install "GravityTDS" by DFRobot.<br />
 GravityDO: Install "Gravity" by DFRobot.<br />
 Adjust the pin configurations if you have connected the sensors to different pins on the ESP8266.<br />
+
+For DS18B20, check the link below for quick start:<br />
+https://randomnerdtutorials.com/guide-for-ds18b20-temperature-sensor-with-arduino/
