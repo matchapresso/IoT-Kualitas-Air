@@ -1,0 +1,122 @@
+#include <Wire.h>
+#include <OneWire.h>
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+#include <DallasTemperature.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// Deklarasi pin pada kontroler Wemos D1 R32
+#define PH_PIN A0
+#define DO_PIN A1
+#define TURBIDITY_PIN A2
+#define TEMP_PIN 4 
+
+// pengaturan tampilan pada layar OLED
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 32
+// #define OLED_RESET -1 // Reset pin not used for I2C
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+// Nilai acuan kalibrasi kontroler
+#define VREF 5
+#define ADC_RESOLUTION 4095
+
+// Pengaturan sensor temperatur DS18B20
+OneWire oneWire(TEMP_PIN);
+DallasTemperature sensors(&oneWire);
+
+// Fungsi untuk membaca pH oleh sensor pH
+float readPH(float voltage) {
+  float pHValue = 3.5 * voltage + 1.65; // Rumus kalibrasi
+  return pHValue;
+}
+
+// Fungsi untuk membaca Dissolved Oxygen oleh sensor DO 
+float readDO(float voltage, float temperature) {
+  // Rumus Kalibrasi
+  float doValue = (voltage / VREF) * 13.6 * (1 + 0.03 * (25 - temperature));
+  return doValue;
+}
+
+// Fungsi untuk membaca Kekeruhan (NTU) oleh sensor Turbidity
+float readTurbidity(float voltage) {
+  // Konversi dari kalibrasi
+  float turbidity = (voltage / VREF) * 3000;
+  return turbidity;
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  // Menginisiasi pembacaan sensor temperatur
+  sensors.begin();
+
+  // pengaturan OLED display
+  if (!display.begin(SSD1306_I2C_ADDRESS, OLED_RESET)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;);
+  }
+  display.display();
+  delay(2000); // jeda 2 detik
+  display.clearDisplay();
+}
+
+void loop() {
+  // Membaca temperatur (digital)
+  sensors.requestTemperatures();
+  float temperature = sensors.getTempCByIndex(0);
+
+  // Pembacaan sensor analog
+  float phVoltage = analogRead(PH_PIN) * (VREF / ADC_RESOLUTION);
+  float doVoltage = analogRead(DO_PIN) * (VREF / ADC_RESOLUTION);
+  float turbidityVoltage = analogRead(TURBIDITY_PIN) * (VREF / ADC_RESOLUTION);
+
+  // Konversi ke nilai penting.
+  float pH = readPH(phVoltage);
+  float dissolvedOxygen = readDO(doVoltage, temperature);
+  float turbidity = readTurbidity(turbidityVoltage);
+
+  // Menampilkan hasil pembacaan pada serial monitor
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" *C");
+
+  Serial.print("pH: ");
+  Serial.println(pH);
+
+  Serial.print("Dissolved Oxygen: ");
+  Serial.print(dissolvedOxygen);
+  Serial.println(" mg/L");
+
+  Serial.print("Turbidity: ");
+  Serial.print(turbidity);
+  Serial.println(" NTU");
+
+  // Display values on OLED
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE); //warna teks = Putih
+
+  display.setCursor(0, 0); // Konfigurasi tampilan kiri
+  display.print("Temp: ");
+  display.print(temperature);
+  display.println(" *C");
+
+  display.print("pH: ");
+  display.println(pH);
+
+  display.print("DO: ");
+  display.print(dissolvedOxygen);
+  display.println(" mg/L");
+
+  display.print("Turbidity: ");
+  display.print(turbidity);
+  display.println(" NTU");
+
+  display.display();
+
+  delay(2000); // Selang waktu pembacaan = 2 detik
+}
