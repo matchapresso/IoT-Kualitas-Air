@@ -5,8 +5,8 @@
 #include <DallasTemperature.h>
 //#include <SimpleTimer.h>
 
-//char ssid[] = "POCO F4";
-//har pass[] = "12345678";
+//char ssid[] = "xxxxxxxx";
+//har pass[] = "xxxxxxxx";
 
 //#define BLYNK_TEMPLATE_ID "TMPL6XYWmUcN3"
 //#define BLYNK_TEMPLATE_NAME "Quickstart Template"
